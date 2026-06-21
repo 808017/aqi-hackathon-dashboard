@@ -6,3 +6,4 @@ folium
 streamlit-folium
 xgboost
 scikit-learn
+plotly
