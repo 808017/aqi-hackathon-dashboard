@@ -68,9 +68,9 @@ def fetch_live_city_values(lat, lon, city_name):
     end = datetime.utcnow()
     start = end - timedelta(days=10)  # widen window since S5P has daily gaps from cloud cover
 
-    def safe_mean(collection, band, scale=5000):
+def safe_mean(collection, band, point, start, end, scale=5000):
 
-     img = (
+    img = (
         collection
         .filterDate(
             start.strftime("%Y-%m-%d"),
@@ -85,8 +85,8 @@ def fetch_live_city_values(lat, lon, city_name):
         reducer=ee.Reducer.mean(),
         geometry=point,
         scale=scale,
-        maxPixels=1e9,
-        bestEffort=True
+        bestEffort=True,
+        maxPixels=1e9
     ).get(band)
 
     if value is None:
