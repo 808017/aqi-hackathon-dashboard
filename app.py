@@ -24,11 +24,13 @@ except ImportError:
     pass
 
 def init_earth_engine():
+    st.error("DEBUG: NEW init_earth_engine() is running")
+    
  if not EE_AVAILABLE:
         st.error("❌ Earth Engine package is not installed.")
         return False
 
-    try:
+     try:
         import json
 
         st.write("Secrets keys:", list(st.secrets.keys()))
@@ -51,7 +53,7 @@ def init_earth_engine():
 
         return True
 
-    except Exception as e:
+     except Exception as e:
         import traceback
 
         st.error(str(e))
