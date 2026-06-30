@@ -58,8 +58,8 @@ def init_earth_engine():
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_live_city_values(lat, lon, city_name):
 
-    if not ee.data.isInitialized():
-       raise RuntimeError("Earth Engine not initialized.")
+    if not st.session_state.get("ee_initialized", False):
+          raise RuntimeError("Earth Engine not initialized.")
 
     
     """Pull the most recent available Sentinel-5P + ERA5 values for one city.
