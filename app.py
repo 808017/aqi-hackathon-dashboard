@@ -24,25 +24,39 @@ except ImportError:
     pass
 
 def init_earth_engine():
-    """Authenticate to Earth Engine using a service account stored in Streamlit secrets.
-    Returns True if successful, False otherwise (dashboard falls back to cached data)."""
-    if not EE_AVAILABLE:
+ if not EE_AVAILABLE:
+        st.error("❌ Earth Engine package is not installed.")
         return False
+
     try:
-        if "gee_service_account" not in st.secrets:
-            return False
-        sa_info = dict(st.secrets["gee_service_account"])
-        credentials = ee.ServiceAccountCredentials(sa_info["client_email"], key_data=None)
-        # ee needs the private key as a json string for key_data
         import json
-        credentials = ee.ServiceAccountCredentials(sa_info["client_email"], key_data=json.dumps(sa_info))
+
+        st.write("Secrets keys:", list(st.secrets.keys()))
+
+        sa_info = dict(st.secrets["gee_service_account"])
+
+        st.write("Loaded service account:", sa_info["client_email"])
+
+        credentials = ee.ServiceAccountCredentials(
+            sa_info["client_email"],
+            key_data=json.dumps(sa_info)
+        )
+
         ee.Initialize(
-    credentials,
-    project="isro-hackathon-500120"
-    )
+            credentials,
+            project="isro-hackathon-500120"
+        )
+
+        st.success("✅ Earth Engine initialized successfully")
+
         return True
+
     except Exception as e:
-        st.session_state["ee_error"] = str(e)
+        import traceback
+
+        st.error(str(e))
+        st.code(traceback.format_exc())
+
         return False
 
 @st.cache_data(ttl=3600, show_spinner=False)
