@@ -70,7 +70,7 @@ def fetch_live_city_values(lat, lon, city_name):
 
     def safe_mean(collection, band, scale=5000):
 
-    img = (
+     img = (
         collection
         .filterDate(
             start.strftime("%Y-%m-%d"),
