@@ -7,3 +7,4 @@ streamlit-folium
 xgboost
 scikit-learn
 plotly
+earthengine-api
