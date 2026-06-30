@@ -24,20 +24,20 @@ except ImportError:
     pass
 
 def init_earth_engine():
-    st.error("DEBUG: NEW init_earth_engine() is running")
-    
- if not EE_AVAILABLE:
-        st.error("❌ Earth Engine package is not installed.")
+    """Initialize Google Earth Engine using Streamlit Secrets."""
+
+    if not EE_AVAILABLE:
+        st.session_state["ee_error"] = "Earth Engine package not installed."
         return False
 
-     try:
+    try:
         import json
 
-        st.write("Secrets keys:", list(st.secrets.keys()))
+        if "gee_service_account" not in st.secrets:
+            st.session_state["ee_error"] = "Missing [gee_service_account] in Streamlit Secrets."
+            return False
 
         sa_info = dict(st.secrets["gee_service_account"])
-
-        st.write("Loaded service account:", sa_info["client_email"])
 
         credentials = ee.ServiceAccountCredentials(
             sa_info["client_email"],
@@ -49,16 +49,10 @@ def init_earth_engine():
             project="isro-hackathon-500120"
         )
 
-        st.success("✅ Earth Engine initialized successfully")
-
         return True
 
-     except Exception as e:
-        import traceback
-
-        st.error(str(e))
-        st.code(traceback.format_exc())
-
+    except Exception as e:
+        st.session_state["ee_error"] = str(e)
         return False
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -70,15 +64,35 @@ def fetch_live_city_values(lat, lon, city_name):
     start = end - timedelta(days=10)  # widen window since S5P has daily gaps from cloud cover
 
     def safe_mean(collection, band, scale=5000):
-        img = collection.filterDate(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')) \
-                         .filterBounds(point).select(band).mean()
-        val = img.reduceRegion(reducer=ee.Reducer.mean(), geometry=point, scale=scale, maxPixels=1e9).get(band)
-        return val.getInfo()
 
-    no2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/NRTI/L3_NO2'), 'tropospheric_NO2_column_number_density')
-    so2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/NRTI/L3_SO2'), 'SO2_column_number_density')
-    co = safe_mean(ee.ImageCollection('COPERNICUS/S5P/NRTI/L3_CO'), 'CO_column_number_density')
-    hcho = safe_mean(ee.ImageCollection('COPERNICUS/S5P/NRTI/L3_HCHO'), 'tropospheric_HCHO_column_number_density')
+    img = (
+        collection
+        .filterDate(
+            start.strftime("%Y-%m-%d"),
+            end.strftime("%Y-%m-%d")
+        )
+        .filterBounds(point)
+        .select(band)
+        .mean()
+    )
+
+    value = img.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=scale,
+        maxPixels=1e9,
+        bestEffort=True
+    ).get(band)
+
+    if value is None:
+        return None
+
+    return ee.Number(value).getInfo()
+
+    no2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_NO2'), 'tropospheric_NO2_column_number_density')
+    so2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_SO2'), 'SO2_column_number_density')
+    co = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CO'), 'CO_column_number_density')
+    hcho = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_HCHO'), 'tropospheric_HCHO_column_number_density')
 
     return {
         'NO2': no2, 'SO2': so2, 'CO': co, 'HCHO': hcho,
@@ -164,25 +178,22 @@ if 'last_refresh' not in st.session_state:
     st.session_state['last_refresh'] = None
 if 'ee_initialized' not in st.session_state:
     st.session_state['ee_initialized'] = init_earth_engine()
-
-    st.write("EE initialized:", st.session_state["ee_initialized"])
-
 if "ee_error" in st.session_state:
     st.error(st.session_state["ee_error"])
-
+   
 
 
 
 
 def refresh_live_data():
 
-    st.write("✅ Refresh button clicked")
+    #st.write("✅ Refresh button clicked")
 
     if not st.session_state['ee_initialized']:
-        st.error("Earth Engine NOT initialized")
+        #st.error("Earth Engine NOT initialized")
         return
 
-    st.success("Earth Engine initialized successfully")
+   # st.success("Earth Engine initialized successfully")
 
     """Pulls live satellite values for all 10 cities and re-predicts AQI with the trained model.
     Falls back gracefully (keeps cached/static values) if Earth Engine is unreachable."""
