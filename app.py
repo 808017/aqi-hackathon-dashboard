@@ -57,6 +57,11 @@ def init_earth_engine():
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_live_city_values(lat, lon, city_name):
+
+    if not ee.data.isInitialized():
+       raise RuntimeError("Earth Engine not initialized.")
+
+    
     """Pull the most recent available Sentinel-5P + ERA5 values for one city.
     Cached for 1 hour so repeated refresh clicks don't hammer the API."""
     point = ee.Geometry.Point([lon, lat])
@@ -186,7 +191,7 @@ if "ee_error" in st.session_state:
 
 
 def refresh_live_data():
-
+   
     #st.write("✅ Refresh button clicked")
 
     if not st.session_state['ee_initialized']:
