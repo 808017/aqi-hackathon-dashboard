@@ -148,11 +148,13 @@ if 'last_refresh' not in st.session_state:
     st.session_state['last_refresh'] = None
 if 'ee_initialized' not in st.session_state:
     st.session_state['ee_initialized'] = init_earth_engine()
-    
-    st.write("EE initialized:", st.session_state['ee_initialized'])
+
+    st.write("EE initialized:", st.session_state["ee_initialized"])
 
 if "ee_error" in st.session_state:
     st.error(st.session_state["ee_error"])
+
+
 
 
 
