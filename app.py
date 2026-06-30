@@ -36,7 +36,10 @@ def init_earth_engine():
         # ee needs the private key as a json string for key_data
         import json
         credentials = ee.ServiceAccountCredentials(sa_info["client_email"], key_data=json.dumps(sa_info))
-        ee.Initialize(credentials)
+        ee.Initialize(
+    credentials,
+    project="isro-hackathon-500120"
+    )
         return True
     except Exception as e:
         st.session_state["ee_error"] = str(e)
