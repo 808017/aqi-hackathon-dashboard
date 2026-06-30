@@ -148,8 +148,24 @@ if 'last_refresh' not in st.session_state:
     st.session_state['last_refresh'] = None
 if 'ee_initialized' not in st.session_state:
     st.session_state['ee_initialized'] = init_earth_engine()
+    
+    st.write("EE initialized:", st.session_state['ee_initialized'])
+
+if "ee_error" in st.session_state:
+    st.error(st.session_state["ee_error"])
+
+
 
 def refresh_live_data():
+
+    st.write("✅ Refresh button clicked")
+
+    if not st.session_state['ee_initialized']:
+        st.error("Earth Engine NOT initialized")
+        return
+
+    st.success("Earth Engine initialized successfully")
+
     """Pulls live satellite values for all 10 cities and re-predicts AQI with the trained model.
     Falls back gracefully (keeps cached/static values) if Earth Engine is unreachable."""
     if not st.session_state['ee_initialized']:
@@ -210,7 +226,6 @@ with btn_col:
     st.write("")
     if st.button("🔄 Refresh Live Data", use_container_width=True, type="primary"):
         refresh_live_data()
-        st.rerun()
 
 # ---------------- KPI ROW ----------------
 k1, k2, k3, k4 = st.columns(4)
