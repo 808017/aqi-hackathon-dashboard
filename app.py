@@ -90,10 +90,37 @@ def fetch_live_city_values(lat, lon, city_name):
 
      return result.get(band)
 
-    no2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_NO2'), 'tropospheric_NO2_column_number_density')
-    so2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_SO2'), 'SO2_column_number_density')
-    co = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CO'), 'CO_column_number_density')
-    hcho = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_HCHO'), 'tropospheric_HCHO_column_number_density')
+    no2 = safe_mean(
+    ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_NO2"),
+    "tropospheric_NO2_column_number_density",
+    point,
+    start,
+    end
+ )
+
+    so2 = safe_mean(
+    ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_SO2"),
+    "SO2_column_number_density",
+    point,
+    start,
+    end
+ )
+
+    co = safe_mean(
+    ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_CO"),
+    "CO_column_number_density",
+    point,
+    start,
+    end
+ )
+
+    hcho = safe_mean(
+    ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_HCHO"),
+    "tropospheric_HCHO_column_number_density",
+    point,
+    start,
+    end
+ )
 
     return {
         'NO2': no2, 'SO2': so2, 'CO': co, 'HCHO': hcho,
