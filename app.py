@@ -57,10 +57,9 @@ def init_earth_engine():
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_live_city_values(lat, lon, city_name):
-
+    
     if not st.session_state.get("ee_initialized", False):
           raise RuntimeError("Earth Engine not initialized.")
-
     
     """Pull the most recent available Sentinel-5P + ERA5 values for one city.
     Cached for 1 hour so repeated refresh clicks don't hammer the API."""
@@ -68,31 +67,28 @@ def fetch_live_city_values(lat, lon, city_name):
     end = datetime.utcnow()
     start = end - timedelta(days=10)  # widen window since S5P has daily gaps from cloud cover
 
-def safe_mean(collection, band, point, start, end, scale=5000):
+    def safe_mean(collection, band, point, start, end, scale=5000):
 
-    img = (
+     img = (
         collection
-        .filterDate(
-            start.strftime("%Y-%m-%d"),
-            end.strftime("%Y-%m-%d")
-        )
+        .filterDate(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
         .filterBounds(point)
         .select(band)
         .mean()
-    )
+     )
 
-    value = img.reduceRegion(
+     result = img.reduceRegion(
         reducer=ee.Reducer.mean(),
         geometry=point,
         scale=scale,
         bestEffort=True,
         maxPixels=1e9
-    ).get(band)
+     ).getInfo()
 
-    if value is None:
+     if result is None:
         return None
 
-    return ee.Number(value).getInfo()
+     return result.get(band)
 
     no2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_NO2'), 'tropospheric_NO2_column_number_density')
     so2 = safe_mean(ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_SO2'), 'SO2_column_number_density')
