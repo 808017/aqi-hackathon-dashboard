@@ -214,25 +214,38 @@ if "ee_error" in st.session_state:
 
 
 def refresh_live_data():
-   
-    #st.write("✅ Refresh button clicked")
+    """Pulls live Sentinel-5P values for all 10 cities and re-predicts AQI."""
 
-    if not st.session_state['ee_initialized']:
-        #st.error("Earth Engine NOT initialized")
+    if not st.session_state.get('ee_initialized', False):
+        st.warning("Live satellite connection unavailable — showing last-known dataset values. "
+                   "Add [gee_service_account] to Streamlit Secrets to enable live refresh.")
         return
 
-   # st.success("Earth Engine initialized successfully")
-
-    """Pulls live satellite values for all 10 cities and re-predicts AQI with the trained model.
-    Falls back gracefully (keeps cached/static values) if Earth Engine is unreachable."""
-    if not st.session_state['ee_initialized']:
-        st.warning("Live satellite connection unavailable — showing last-known dataset values instead. "
-                    "(Set up the GEE service account in Streamlit secrets to enable live refresh.)")
-        return
     progress = st.progress(0, text="Connecting to Sentinel-5P...")
     live_rows = []
     try:
         for i, row in CITY_DATA.iterrows():
+            pct = (i + 1) / len(CITY_DATA)
+            progress.progress(pct, text=f"Fetching live data for {row['City']}...")
+            vals = fetch_live_city_values(row['lat'], row['lon'], row['City'])
+            merged = row.to_dict()
+            for k in ['NO2', 'SO2', 'CO', 'HCHO']:
+                if vals.get(k) is not None:
+                    merged[k] = float(vals[k])
+            X_live = pd.DataFrame([{f: merged[f] for f in
+                ['NO2','SO2','CO','HCHO','Temp_C','WindSpeed','RH','BLH','lat','lon']}])
+            merged['AQI'] = float(model.predict(X_live)[0])
+            merged['Category'] = aqi_category(merged['AQI'])
+            merged['Color'] = aqi_color(merged['AQI'])
+            live_rows.append(merged)
+        progress.empty()
+        st.session_state['live_data'] = pd.DataFrame(live_rows)
+        st.session_state['last_refresh'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+        st.success("✅ Live satellite data fetched — map updated.")
+    except Exception as e:
+        progress.empty()
+        st.error(f"Live fetch failed: {e}")
+
             progress.progress((i + 1) / len(CITY_DATA), text=f"Fetching live data for {row['City']}...")
             vals = fetch_live_city_values(row['lat'], row['lon'], row['City'])
             merged = row.to_dict()
