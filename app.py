@@ -246,29 +246,6 @@ def refresh_live_data():
         progress.empty()
         st.error(f"Live fetch failed: {e}")
 
-            progress.progress((i + 1) / len(CITY_DATA), text=f"Fetching live data for {row['City']}...")
-            vals = fetch_live_city_values(row['lat'], row['lon'], row['City'])
-            merged = row.to_dict()
-            for k in ['NO2', 'SO2', 'CO', 'HCHO']:
-                if vals.get(k) is not None:
-                    merged[k] = vals[k]
-            # weather (Temp_C, WindSpeed, RH, BLH) kept from latest known snapshot — ERA5 pull
-            # is intentionally omitted from the on-demand path since CDS API requests take minutes,
-            # not seconds, which would block the dashboard UI.
-            X_live = pd.DataFrame([{f: merged[f] for f in
-                ['NO2','SO2','CO','HCHO','Temp_C','WindSpeed','RH','BLH','lat','lon']}])
-            merged['AQI'] = float(model.predict(X_live)[0])
-            merged['Category'] = aqi_category(merged['AQI'])
-            merged['Color'] = aqi_color(merged['AQI'])
-            live_rows.append(merged)
-        progress.empty()
-        st.session_state['live_data'] = pd.DataFrame(live_rows)
-        st.session_state['last_refresh'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-        st.success("Live satellite data fetched and AQI re-predicted successfully.")
-    except Exception as e:
-        progress.empty()
-        st.error(f"Live fetch failed ({e}) — showing last-known dataset values instead.")
-
 # Use live data if available, otherwise the static snapshot
 ACTIVE_DATA = st.session_state['live_data'] if st.session_state['live_data'] is not None else CITY_DATA
 DATA_STATUS = "🟢 LIVE" if st.session_state['live_data'] is not None else "🟡 CACHED SNAPSHOT"
